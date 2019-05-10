@@ -1,0 +1,11 @@
+{
+  "dir": "d:\\dev\\test-folder",
+  "extension": ".js",
+  "items": [
+    {
+      "replace": "can.Component",
+      "with": "canConponent",
+      "addImport": false
+    }
+  ]
+}
