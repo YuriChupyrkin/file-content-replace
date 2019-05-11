@@ -1,11 +1,11 @@
 {
-  "dir": "d:\\dev\\test-folder",
+  "dir": "some path here",
   "extension": ".js",
   "items": [
     {
+      "importSrting": "import canComponent from 'can-component';",
       "replace": "can.Component",
-      "with": "canConponent",
-      "addImport": false
+      "with": "canComponent"
     }
   ]
 }

@@ -9,18 +9,18 @@ async function getFiles (dir, extension) {
   }
 
   let matchFiles = [];
-  const files = fs.readdirSync(dir);
+  let files = fs.readdirSync(dir);
 
   for (let i = 0; i < files.length; i++) {
-      let filePath = path.join(dir, files[i]);
-      let stat = fs.lstatSync(filePath);
-      if (stat.isDirectory()) {
-        let foundFiles = await getFiles(filePath, extension); //recurse
-        matchFiles = matchFiles.concat(foundFiles);
-      } else if (path.extname(filePath) == extension) {
-        matchFiles.push(filePath);
-      };
-  };
+    let filePath = path.join(dir, files[i]);
+    let stat = fs.lstatSync(filePath);
+    if (stat.isDirectory()) {
+      let foundFiles = await getFiles(filePath, extension); //recurse
+      matchFiles = matchFiles.concat(foundFiles);
+    } else if (path.extname(filePath) == extension) {
+      matchFiles.push(filePath);
+    };
+  }
 
   return matchFiles;
 }
@@ -30,21 +30,22 @@ async function update (config, files) {
   let writeFilesCount = 0;
   let promises = [];
 
-  for (let i = 0; i < files.length; i++) {
+  files.forEach((filePath) => {
     let promise = new Promise((resolve, reject) => {
-      fs.readFile(files[i], 'utf8', (err, fileContent) => {
-        let filePath = files[i];
+      fs.readFile(filePath, 'utf8', (err, fileContent) => {
         readFilesCount++
 
         if (err) {
+          console.error(err);
           throw new Error(`cannot read file: ${filePath}`);
         }
 
-        const replacedContent = replace(fileContent, config)
+        const replacedContent = replace(fileContent, config);
 
-        if (replacedContent !== fileContent)
+        if (replacedContent !== fileContent) {
           fs.writeFile(filePath, replacedContent, (err) => {
             if (err) {
+              console.error(err);
               throw new Error(`write file: ${filePath}`);
             }
 
@@ -52,11 +53,16 @@ async function update (config, files) {
             console.log(`Updated: ${filePath}`);
             resolve();
           });
+        } else {
+          resolve();
+        }
+
+        console.log(`Progress: ${readFilesCount} / ${files.length}`);
       });
     });
 
     promises.push(promise);
-  }
+  });
 
   await Promise.all(promises).then(() => {
     console.log(`Updated! Read count: ${readFilesCount}; Write count: ${writeFilesCount}`);
@@ -66,7 +72,6 @@ async function update (config, files) {
 const updateFiles = async function (config) {
   const files = await getFiles(config.dir, config.extension);
   await update(config, files);
-  return true;
 };
 
 module.exports = updateFiles;
