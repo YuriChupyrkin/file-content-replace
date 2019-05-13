@@ -17,8 +17,10 @@ async function getFiles (dir, extension) {
     if (stat.isDirectory()) {
       let foundFiles = await getFiles(filePath, extension); //recurse
       matchFiles = matchFiles.concat(foundFiles);
-    } else if (path.extname(filePath) == extension) {
-      matchFiles.push(filePath);
+    } else if (path.extname(filePath) == extension &&
+      filePath.includes('js/components/') &&
+      !files[i].includes('_spec')) {
+        matchFiles.push(filePath);
     };
   }
 
@@ -69,9 +71,60 @@ async function update (config, files) {
   });
 };
 
+const isDiffTagAndFileName = async function (files) {
+  let promises = [];
+  let readFilesCount = 0;
+  let diffs = [];
+
+  files.forEach((filePath) => {
+    let promise = new Promise((resolve, reject) => {
+
+      fs.readFile(filePath, 'utf8', (err, fileContent) => {
+        readFilesCount++
+
+        if (err) {
+          console.error(err);
+          throw new Error(`cannot read file: ${filePath}`);
+        }
+
+        let match = fileContent.match('tag: \'[a-zA-Z-]+\'');
+
+        if (match && match.length > 0) {
+          let tagName = match[0].split("'")[1];
+          let fileName = path.basename(filePath).split('.js')[0];
+
+          if (tagName !== fileName) {
+            diffs.push(fileName);
+          }
+        }
+
+        resolve();
+      });
+    });
+
+    promises.push(promise);
+  });
+
+  await Promise.all(promises).then(() => {
+    console.log(`isDiffTagAndFileName DONE! Read count: ${readFilesCount}`);
+  });
+
+  return diffs;
+}
+
 const updateFiles = async function (config) {
   const files = await getFiles(config.dir, config.extension);
-  await update(config, files);
+  const diffs = await isDiffTagAndFileName(files);
+
+  console.log('DIFF:');
+  diffs.forEach((diffFileName) => {
+    console.log(diffFileName);
+  });
+
+  console.log(`diffs found: ${diffs.length}`);
+  console.warn('===========================================');
+  console.warn('===========================================');
+  console.warn('===========================================');
 };
 
 module.exports = updateFiles;
