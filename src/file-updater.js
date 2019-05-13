@@ -17,8 +17,10 @@ async function getFiles (dir, extension) {
     if (stat.isDirectory()) {
       let foundFiles = await getFiles(filePath, extension); //recurse
       matchFiles = matchFiles.concat(foundFiles);
-    } else if (path.extname(filePath) == extension) {
-      matchFiles.push(filePath);
+    } else if (path.extname(filePath) == extension &&
+      !files[i].includes('_spec') &&
+      files[i].includes('_')) {
+        matchFiles.push(filePath);
     };
   }
 
@@ -71,7 +73,13 @@ async function update (config, files) {
 
 const updateFiles = async function (config) {
   const files = await getFiles(config.dir, config.extension);
-  await update(config, files);
+  files.forEach((file) => {
+    console.log(file);
+  });
+  console.log(`files found: ${files.length}`);
+  console.warn('===========================================');
+  console.warn('===========================================');
+  console.warn('===========================================');
 };
 
 module.exports = updateFiles;
